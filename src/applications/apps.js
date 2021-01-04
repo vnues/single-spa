@@ -88,12 +88,20 @@ export function getAppStatus(appName) {
   return app ? app.status : null;
 }
 
+/**
+ * 
+ * @param {*} appNameOrConfig app名称或者配置项
+ * @param {*} appOrLoadApp  加载app资源的函数 返回值为Promise
+ * @param {*} activeWhen 什么时候开始加载这个应用
+ * @param {*} customProps 传递的props
+ */
 export function registerApplication(
   appNameOrConfig,
   appOrLoadApp,
   activeWhen,
   customProps
 ) {
+  // * 筛选和过滤传递过来的配置项===>使它们合法化
   const registration = sanitizeArguments(
     appNameOrConfig,
     appOrLoadApp,
@@ -102,6 +110,7 @@ export function registerApplication(
   );
 
   if (getAppNames().indexOf(registration.name) !== -1)
+  // * 重复注册
     throw Error(
       formatErrorMessage(
         21,
