@@ -70,9 +70,12 @@
               "hello my-single-spa; <br> this content made for app3!";
           },
           unmount: async (props) => {
+            console.log('即将卸载unmount')
             this.container.innerHTML = "";
           },
           unload: async (props) => {
+            debugger
+            console.log("即将unload")
             delete this.container;
           },
         };

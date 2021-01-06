@@ -1,3 +1,4 @@
+// ! 如果写ts类型包 其实只要给暴露的api补充type就行，内部如何实现我们不管
 declare module "single-spa" {
   interface CustomProps {
     [str: string]: any;

@@ -163,6 +163,7 @@ export function checkActivityFunctions(location = window.location) {
 /**
  * * 注销应用
  * unregisterApplication函数将unmount、unload和注销应用程序。一旦使用它不再被注册，应用程序将不再被装载。
+ * ! 立即卸载 默认{waitForUnmount:false}
  */
 export function unregisterApplication(appName) {
   if (apps.filter((app) => toName(app) === appName).length === 0) {
@@ -184,6 +185,15 @@ export function unregisterApplication(appName) {
   });
 }
 
+/**
+ * 当调用 unloadApplication 时，Single-spa执行以下步骤。
+ * 在一个已经注册的应用上，调用 unload lifecyle 方法。
+ * 将次应用的状态置为 NOT_LOADED
+ * 触发路由重定向，在此期间single-spa可能会挂载刚刚卸载的应用程序。
+ */
+// ! 移除已注册的应用的目的是将其设置回 NOT_LOADED 状态，这意味着它将在下一次需要挂载时重新初始化。
+// ! 它的主要使用场景是允许热加载所有已注册的应用，但是 unloadApplication 可以在您希望初始化应用时非常有用。
+// ! 主要可能用于热重载 热重载： 文件改动后，以最小的代价改变被改变的区域。尽可能保留改动文件前的状态（修改js代码之后可以把页面输入的部分信息保留下来）
 export function unloadApplication(appName, opts = { waitForUnmount: false }) {
   if (typeof appName !== "string") {
     throw Error(
@@ -204,26 +214,29 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
       )
     );
   }
-
-  const appUnloadInfo = getAppUnloadInfo(toName(app));
+  // * 获取要unload的app的信息 是否存在在appsToUnload集合
+  const appUnloadInfo = getAppUnloadInfo(toName(app
   console.log("appUnloadInfo", appUnloadInfo);
   if (opts && opts.waitForUnmount) {
+    // * 属性的对象。当 `waitForUnmount` 是 `false`, single-spa 立刻移除特定应用，尽管它已经被挂载。 当它是true时, single-spa 会等待到它的状态不再是MOUNTED时才移除应用
     // We need to wait for unmount before unloading the app
-
+    // * 如果存在appUnloadInfo
     if (appUnloadInfo) {
       // Someone else is already waiting for this, too
+      // * 返回的是一个Promsie
       return appUnloadInfo.promise;
     } else {
       // We're the first ones wanting the app to be resolved.
       const promise = new Promise((resolve, reject) => {
+        // * 将该unload的应用添加到appsToUnload集合
         addAppToUnload(app, () => promise, resolve, reject);
       });
       return promise;
     }
   } else {
+    // * 如果立刻移除特定应用
     /* We should unmount the app, unload it, and remount it immediately.
      */
-
     let resultPromise;
 
     if (appUnloadInfo) {
@@ -233,6 +246,7 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
     } else {
       // We're the first ones wanting the app to be resolved.
       resultPromise = new Promise((resolve, reject) => {
+        // * 传递resolve,reject可以理解为交出该Promise的控制权
         addAppToUnload(app, () => resultPromise, resolve, reject);
         immediatelyUnloadApp(app, resolve, reject);
       });
@@ -242,19 +256,30 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
   }
 }
 
+// umount==>unload==>remount
 function immediatelyUnloadApp(app, resolve, reject) {
+  // * 调用umount生命周期函数进行卸载
   toUnmountPromise(app)
+  // * 调用unload生命周期函数
     .then(toUnloadPromise)
     .then(() => {
+      // 注意这里resolve 通知then注册微任务
       resolve();
       setTimeout(() => {
         // reroute, but the unload promise is done
+        debugger
+        // ! 这里由于宏任务低于上面微任务的优先级 所以apps是去除注册过后的 reroute, but the unload promise is done
+        // ? 然后再执行reroute 好奇怪为啥要再执行一遍 ===> 因为unloadApplication是为热重载 此时app为NOT_LOADED状态
+        // ! 但是我们单单只调用unloadApplication没有删除app，所以应该重新reroute然后挂载
+        // ! 而unregisterApplication是删除了app  所以执行reroute跟不执行没什么区别
+        console.log(apps)
         reroute();
       });
     })
     .catch(reject);
 }
 
+// * 校验registerApplication函数的参数
 function validateRegisterWithArguments(
   name,
   appOrLoadApp,
@@ -298,6 +323,7 @@ function validateRegisterWithArguments(
     );
 }
 
+// * 校验registerApplication函数的参数,针对于参数是对象形式的传入
 export function validateRegisterWithConfig(config) {
   if (Array.isArray(config) || config === null)
     throw Error(
@@ -365,6 +391,7 @@ export function validateRegisterWithConfig(config) {
     );
 }
 
+// * 校验在生命周期钩子函数执行时会被作为参数传入
 function validCustomProps(customProps) {
   return (
     !customProps ||
@@ -375,6 +402,7 @@ function validCustomProps(customProps) {
   );
 }
 
+// * 统一规范化registerApplication函数的参数
 function sanitizeArguments(
   appNameOrConfig,
   appOrLoadApp,
@@ -416,6 +444,7 @@ function sanitizeArguments(
   return registration;
 }
 
+// * 规范化appOrLoadApp函数
 function sanitizeLoadApp(loadApp) {
   if (typeof loadApp !== "function") {
     return () => Promise.resolve(loadApp);
@@ -423,11 +452,11 @@ function sanitizeLoadApp(loadApp) {
 
   return loadApp;
 }
-
+// * 规范化在生命周期钩子函数执行时会被作为参数传入
 function sanitizeCustomProps(customProps) {
   return customProps ? customProps : {};
 }
-
+// * 规范化sanitizeActiveWhen函数
 function sanitizeActiveWhen(activeWhen) {
   let activeWhenArray = Array.isArray(activeWhen) ? activeWhen : [activeWhen];
   activeWhenArray = activeWhenArray.map((activeWhenOrPath) =>
