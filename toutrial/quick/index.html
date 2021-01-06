@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>快速上手</title>
+    <script src="../../lib/umd/single-spa.js"></script>
+    <script>
+      // 加载app
+      function loadAppPromise(app) {
+        return () =>
+          new Promise((resolve, reject) => {
+            // 模拟异步
+            setTimeout(function () {
+              resolve({
+                bootstrap: [app.bootstrap],
+                mount: [app.mount],
+                unmount: [app.unmount],
+                unload: [app.unload],
+              });
+            }, 1000);
+          });
+      }
+    </script>
+    <script>
+      (async (global) => {
+        const singleSpa = global.singleSpa;
+        const APP1 = {
+          container: null,
+          bootstrap: async (props) => {
+            this.container = document.getElementById("app");
+            this.container.innerHTML = "bootstrapping";
+          },
+          mount: async (props) => {
+            this.container.innerHTML =
+              "hello my-single-spa; <br> this content made for app1!";
+          },
+          unmount: async (props) => {
+            this.container.innerHTML = "";
+          },
+          unload: async (props) => {
+            delete this.container;
+          },
+        };
+
+        const APP2 = {
+          container: null,
+          bootstrap: async (props) => {
+            this.container = document.getElementById("app");
+            this.container.innerHTML = "bootstrapping";
+          },
+          mount: async (props) => {
+            this.container.innerHTML =
+              "hello my-single-spa; <br> this content made for app2!";
+          },
+          unmount: async (props) => {
+            this.container.innerHTML = "";
+          },
+          unload: async (props) => {
+            delete this.container;
+          },
+        };
+        const APP3 = {
+          container: null,
+          bootstrap: async (props) => {
+            this.container = document.getElementById("app-1");
+            this.container.innerHTML = "bootstrapping";
+          },
+          mount: async (props) => {
+            this.container.innerHTML =
+              "hello my-single-spa; <br> this content made for app3!";
+          },
+          unmount: async (props) => {
+            this.container.innerHTML = "";
+          },
+          unload: async (props) => {
+            delete this.container;
+          },
+        };
+
+        const APP4 = {
+          container: null,
+          bootstrap: async (props) => {
+            this.container = document.getElementById("app-1");
+            this.container.innerHTML = "bootstrapping";
+          },
+          mount: async (props) => {
+            this.container.innerHTML =
+              "hello my-single-spa; <br> this content made for app4!";
+          },
+          unmount: async (props) => {
+            this.container.innerHTML = "";
+          },
+          unload: async (props) => {
+            delete this.container;
+          },
+        };
+        // loadScript('http://localhost:10000/js/app.js') 加载这个导入三个生命周期函数
+        // 跟下面一样的道理
+        // 注册app1和app2
+        // single-spa要我们自己配置文件引入 qiankun就不需要自己 爬取
+        // 反正不管怎么样 基于协议获取生命周期函数就行 也就是applicationOrLoadFunction
+        // 至于文件怎么获取 怎么拿到有这三个生命周期函数的文件 就看是自己配置还是爬取了
+        singleSpa.registerApplication(
+          "app1",
+          loadAppPromise(APP1),
+          (location) => location.hash === "#/app1"
+        );
+        singleSpa.registerApplication(
+          "app3",
+          loadAppPromise(APP3),
+          (location) => location.hash === "#/app1"
+        );
+        // singleSpa.registerApplication('app4', loadAppPromise(APP4), location => location.hash === '#/app1');
+        // singleSpa.registerApplication('app2', loadAppPromise(APP2), location => location.hash === '#/app2');
+        // 启动
+        singleSpa.start();
+        setTimeout(() => {
+          console.log("注销app3");
+          singleSpa.unregisterApplication("app3");
+        }, 3000);
+      })(window);
+    </script>
+  </head>
+  <body>
+    <div>
+      <a href="/toutrial/quick/index.html">查看简易上手</a>
+      -
+      <a href="/toutrial/systemjs/index.html">查看systemjs版本</a>
+      -
+      <a href="/toutrial/vue/index.html">查看Vuejs版本</a>
+      -
+      <a href="/toutrial/service/index.html">功能级别隔离</a>
+    </div>
+    <div style="text-align: center; padding: 10px; background: #ccc;">
+      <a href="#/app1">click to app1</a> | <a href="#/app2">click to app2</a>
+    </div>
+    <div id="app" style="padding: 10px; border: 1px solid; margin: 10px;"></div>
+    <div
+      id="app-1"
+      style="padding: 10px; border: 1px solid; margin: 10px;"
+    ></div>
+  </body>
+</html>

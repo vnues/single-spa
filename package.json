@@ -10,7 +10,7 @@
     "build:prod": "rollup -c --environment NODE_ENV:'production'",
     "build:dev": "rollup -c",
     "build:analyze": "rollup -c --environment ANALYZER:'analyzer'",
-    "watch": "rollup -c -w",
+    "watch": "SERVE=true rollup -c -w",
     "prepublishOnly": "yarn build",
     "clean": "rimraf lib",
     "test": "concurrently -n w: 'yarn:test:*'",
@@ -83,7 +83,8 @@
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-terser": "^5.3.0",
-    "tsd": "^0.11.0"
+    "tsd": "^0.11.0",
+    "rollup-plugin-serve": "^1.0.1"
   },
   "browserslist": [
     "ie >= 11",
@@ -96,7 +97,7 @@
     "examples",
     "docs"
   ],
-  "standard":{
-    "ignore":"*"
+  "standard": {
+    "ignore": "*"
   }
 }

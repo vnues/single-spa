@@ -4,6 +4,7 @@ import commonjs from "rollup-plugin-commonjs";
 import analyzer from "rollup-plugin-analyzer";
 import replace from "@rollup/plugin-replace";
 import packageJson from "./package.json";
+import serve from "rollup-plugin-serve";
 
 const isProduction = process.env.NODE_ENV === "production";
 const useAnalyzer = process.env.ANALYZER === "analyzer";
@@ -22,9 +23,10 @@ const terserOpts = {
     passes: 2,
   },
   output: {
-    comments(node, comment) {
-      return comment.value.trim().startsWith("single-spa@");
-    },
+    file: "./lib/umd/single-spa.js",
+    format: "umd",
+    name: "mySingleSpa",
+    sourcemap: true,
   },
 };
 
@@ -33,20 +35,20 @@ export default (async () => [
     input: "./src/single-spa.js",
     output: [
       {
-        file: `./lib/umd/single-spa${isProduction ? ".min" : ".dev"}.js`,
+        file: `./lib/umd/single-spa.js`,
         format: "umd",
         name: "singleSpa",
         sourcemap: true,
         banner: generateBanner("UMD"),
       },
       {
-        file: `./lib/system/single-spa${isProduction ? ".min" : ".dev"}.js`,
+        file: `./lib/system/single-spa.js`,
         format: "system",
         sourcemap: true,
         banner: generateBanner("SystemJS"),
       },
       {
-        file: `./lib/esm/single-spa${isProduction ? ".min" : ".dev"}.js`,
+        file: `./lib/esm/single-spa.js`,
         format: "esm",
         sourcemap: true,
         banner: generateBanner("ESM"),
@@ -86,6 +88,15 @@ export default (async () => [
           })
         ),
       useAnalyzer && analyzer(),
+      process.env.SERVE
+        ? serve({
+            open: true,
+            contentBase: "",
+            openPage: "/toutrial/quick/index.html",
+            host: "localhost",
+            port: 10001,
+          })
+        : null,
     ],
   },
 ])();

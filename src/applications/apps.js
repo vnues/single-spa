@@ -92,7 +92,7 @@ export function getAppStatus(appName) {
 }
 
 /**
- * 
+ *
  * @param {*} appNameOrConfig app名称或者配置项
  * @param {*} appOrLoadApp  加载app资源的函数 返回值为Promise
  * @param {*} activeWhen 什么时候开始激活这个应用
@@ -113,7 +113,7 @@ export function registerApplication(
   );
 
   if (getAppNames().indexOf(registration.name) !== -1)
-  // * 重复注册
+    // * 重复注册
     throw Error(
       formatErrorMessage(
         21,
@@ -144,10 +144,11 @@ export function registerApplication(
      * 简单理解：如果页面中使用了jQuery，则给jQuery打patch
      * ! 因为JQuery是调用$.on来注册事件的而不是通过addEventListner
      * ! https://zh-hans.single-spa.js.org/docs/api/
-     * ! https://learn.jquery.com/events/event-delegation/ 
+     * ! https://learn.jquery.com/events/event-delegation/
      * jQuery使用 event delegation 所以 single-spa 必须给每个jQuery版本一个patch
      * ! 事件委托， 改写 $.on 绑定 hashchange、popstate 事件的功能，以便支持使用 window.$
-     */ 
+     */
+
     ensureJQuerySupport();
     // ! 核心方法 其负责调控应用脚本加载、卸载，应用内容挂载、卸载的流程
     reroute();
@@ -205,6 +206,7 @@ export function unloadApplication(appName, opts = { waitForUnmount: false }) {
   }
 
   const appUnloadInfo = getAppUnloadInfo(toName(app));
+  console.log("appUnloadInfo", appUnloadInfo);
   if (opts && opts.waitForUnmount) {
     // We need to wait for unmount before unloading the app
 
