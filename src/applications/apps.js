@@ -70,19 +70,22 @@ export function getAppChanges() {
   return { appsToUnload, appsToUnmount, appsToLoad, appsToMount };
 }
 
+// * 获取状态为Mounted的应用
 export function getMountedApps() {
   return apps.filter(isActive).map(toName);
 }
 
+// * 根据appName获取app
 export function getAppNames() {
   return apps.map(toName);
 }
 
 // used in devtools, not (currently) exposed as a single-spa API
+// ? 废弃的api 不用理会
 export function getRawAppData() {
   return [...apps];
 }
-
+// * 根据appName获取应用状态
 export function getAppStatus(appName) {
   const app = find(apps, (app) => toName(app) === appName);
   return app ? app.status : null;
@@ -92,8 +95,8 @@ export function getAppStatus(appName) {
  * 
  * @param {*} appNameOrConfig app名称或者配置项
  * @param {*} appOrLoadApp  加载app资源的函数 返回值为Promise
- * @param {*} activeWhen 什么时候开始加载这个应用
- * @param {*} customProps 传递的props
+ * @param {*} activeWhen 什么时候开始激活这个应用
+ * @param {*} customProps 传递给子应用的 props 对象
  */
 export function registerApplication(
   appNameOrConfig,
@@ -119,7 +122,7 @@ export function registerApplication(
         registration.name
       )
     );
-
+  // * apps是全局数组变量 我们把所有注册的app应用都push进去，并初始化状态为NOT_LOADED
   apps.push(
     assign(
       {
@@ -136,20 +139,34 @@ export function registerApplication(
       registration
     )
   );
-
   if (isInBrowser) {
+    /**
+     * 简单理解：如果页面中使用了jQuery，则给jQuery打patch
+     * ! 因为JQuery是调用$.on来注册事件的而不是通过addEventListner
+     * ! https://zh-hans.single-spa.js.org/docs/api/
+     * ! https://learn.jquery.com/events/event-delegation/ 
+     * jQuery使用 event delegation 所以 single-spa 必须给每个jQuery版本一个patch
+     * ! 事件委托， 改写 $.on 绑定 hashchange、popstate 事件的功能，以便支持使用 window.$
+     */ 
     ensureJQuerySupport();
+    // ! 核心方法 其负责调控应用脚本加载、卸载，应用内容挂载、卸载的流程
     reroute();
   }
 }
 
+// * 在当前loaction,通过activeWhen函数检测是否要加载应用
 export function checkActivityFunctions(location = window.location) {
   return apps.filter((app) => app.activeWhen(location)).map(toName);
 }
 
+/**
+ * * 注销应用
+ * unregisterApplication函数将unmount、unload和注销应用程序。一旦使用它不再被注册，应用程序将不再被装载。
+ */
 export function unregisterApplication(appName) {
   if (apps.filter((app) => toName(app) === appName).length === 0) {
     throw Error(
+      // ! 可以看到成熟的库处理错误信息都很优雅
       formatErrorMessage(
         25,
         __DEV__ &&
@@ -158,8 +175,9 @@ export function unregisterApplication(appName) {
       )
     );
   }
-
+  // * unloadApplication函数做了这三步 unmount、unload和注销应用程序
   return unloadApplication(appName).then(() => {
+    // * 核心一步就是在apps数组中去除
     const appIndex = apps.map(toName).indexOf(appName);
     apps.splice(appIndex, 1);
   });

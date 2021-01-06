@@ -11,6 +11,7 @@ export function start(opts) {
     // * urlRerouteOnly:默认为false的布尔值。如果设置为true，对history.pushState()和history.replaceState()的调用将不会触发single-spa重路由，除非客户端路由被更改。在某些情况下，将此设置为true可以提高性能。
     setUrlRerouteOnly(opts.urlRerouteOnly);
   }
+  // ! 只在浏览器环境中调用
   if (isInBrowser) {
     // * 核心方法 调度应用
     reroute();
