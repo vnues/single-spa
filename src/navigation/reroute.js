@@ -34,6 +34,10 @@ export function triggerAppChange() {
   return reroute();
 }
 
+/**
+ * ! 核心方法 其负责调控应用脚本加载、卸载，应用内容挂载、卸载的流程
+ * * 原理很像事件循环 
+ */
 export function reroute(pendingPromises = [], eventArguments) {
   if (appChangeUnderway) {
     return new Promise((resolve, reject) => {
@@ -76,7 +80,6 @@ export function reroute(pendingPromises = [], eventArguments) {
   function loadApps() {
     return Promise.resolve().then(() => {
       const loadPromises = appsToLoad.map(toLoadPromise);
-
       return (
         Promise.all(loadPromises)
           .then(callAllEventListeners)
